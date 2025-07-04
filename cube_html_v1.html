@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Cube Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            display: flex;
+            gap: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .cube-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 600px;
+            position: relative;
+        }
+
+        .cube {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(15deg) rotateY(25deg);
+            transition: transform 0.1s;
+            cursor: grab;
+        }
+
+        .cube.dragging {
+            cursor: grabbing;
+        }
+
+        .face {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            opacity: 0.9;
+        }
+
+        .front { 
+            background: #ff6b6b;
+            transform: rotateY(0deg) translateZ(100px); 
+        }
+        .back { 
+            background: #4ecdc4;
+            transform: rotateY(180deg) translateZ(100px); 
+        }
+        .right { 
+            background: #45b7d1;
+            transform: rotateY(90deg) translateZ(100px); 
+        }
+        .left { 
+            background: #f9ca24;
+            transform: rotateY(-90deg) translateZ(100px); 
+        }
+        .top { 
+            background: #6c5ce7;
+            transform: rotateX(90deg) translateZ(100px); 
+        }
+        .bottom { 
+            background: #fd79a8;
+            transform: rotateX(-90deg) translateZ(100px); 
+        }
+
+        .controls {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: fit-content;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .controls h2 {
+            margin-top: 0;
+            color: #ffffff;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group h3 {
+            margin: 0 0 15px 0;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        .input-group input[type="color"] {
+            height: 40px;
+            padding: 2px;
+        }
+
+        .input-group input[type="range"] {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .face-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .face-control {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .face-control h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        .gradient-controls {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .gradient-controls.active {
+            display: block;
+        }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #b0b0b0;
+        }
+
+        /* Scrollbar styling */
+        .controls::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .controls::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="cube-container">
+            <div class="cube" id="cube">
+                <div class="face front" data-face="front">FRONT</div>
+                <div class="face back" data-face="back">BACK</div>
+                <div class="face right" data-face="right">RIGHT</div>
+                <div class="face left" data-face="left">LEFT</div>
+                <div class="face top" data-face="top">TOP</div>
+                <div class="face bottom" data-face="bottom">BOTTOM</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h2>🎛️ Cube Controls</h2>
+            
+            <div class="control-group">
+                <h3>📏 General Settings</h3>
+                <div class="input-group">
+                    <label for="cubeSize">Cube Size:</label>
+                    <input type="range" id="cubeSize" min="100" max="400" value="200">
+                    <span id="sizeValue">200px</span>
+                </div>
+                <div class="input-group">
+                    <label for="mouseSensitivity">Mouse Sensitivity:</label>
+                    <input type="range" id="mouseSensitivity" min="0.1" max="2" step="0.1" value="1">
+                    <span id="sensitivityValue">1.0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>🎨 Face Colors & Gradients</h3>
+                <div class="face-controls">
+                    <div class="face-control">
+                        <h4>Front</h4>
+                        <input type="color" id="frontColor" value="#ff6b6b">
+                        <select id="frontGradient">
+                            <option value="none">Solid Color</option>
+                            <option value="linear">Linear Gradient</option>
+                            <option value="radial">Radial Gradient</option>
+                        </select>
+                        <div class="gradient-controls" id="frontGradientControls">
+                            <input type="color" id="frontColor2" value="#ee5a52">
+                            <select id="frontGradientDir">
+                                <option value="to right">Left to Right</option>
+                                <option value="to bottom">Top to Bottom</option>
+                                <option value="to bottom right">Diagonal</option>
+                                <option value="45deg">45° Angle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="face-control">
+                        <h4>Back</h4>
+                        <input type="color" id="backColor" value="#4ecdc4">
+                        <select id="backGradient">
+                            <option value="none">Solid Color</option>
+                            <option value="linear">Linear Gradient</option>
+                            <option value="radial">Radial Gradient</option>
+                        </select>
+                        <div class="gradient-controls" id="backGradientControls">
+                            <input type="color" id="backColor2" value="#26a0a0">
+                            <select id="backGradientDir">
+                                <option value="to right">Left to Right</option>
+                                <option value="to bottom">Top to Bottom</option>
+                                <option value="to bottom right">Diagonal</option>
+                                <option value="45deg">45° Angle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="face-control">
+                        <h4>Right</h4>
+                        <input type="color" id="rightColor" value="#45b7d1">
+                        <select id="rightGradient">
+                            <option value="none">Solid Color</option>
+                            <option value="linear">Linear Gradient</option>
+                            <option value="radial">Radial Gradient</option>
+                        </select>
+                        <div class="gradient-controls" id="rightGradientControls">
+                            <input type="color" id="rightColor2" value="#2980b9">
+                            <select id="rightGradientDir">
+                                <option value="to right">Left to Right</option>
+                                <option value="to bottom">Top to Bottom</option>
+                                <option value="to bottom right">Diagonal</option>
+                                <option value="45deg">45° Angle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="face-control">
+                        <h4>Left</h4>
+                        <input type="color" id="leftColor" value="#f9ca24">
+                        <select id="leftGradient">
+                            <option value="none">Solid Color</option>
+                            <option value="linear">Linear Gradient</option>
+                            <option value="radial">Radial Gradient</option>
+                        </select>
+                        <div class="gradient-controls" id="leftGradientControls">
+                            <input type="color" id="leftColor2" value="#f39c12">
+                            <select id="leftGradientDir">
+                                <option value="to right">Left to Right</option>
+                                <option value="to bottom">Top to Bottom</option>
+                                <option value="to bottom right">Diagonal</option>
+                                <option value="45deg">45° Angle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="face-control">
+                        <h4>Top</h4>
+                        <input type="color" id="topColor" value="#6c5ce7">
+                        <select id="topGradient">
+                            <option value="none">Solid Color</option>
+                            <option value="linear">Linear Gradient</option>
+                            <option value="radial">Radial Gradient</option>
+                        </select>
+                        <div class="gradient-controls" id="topGradientControls">
+                            <input type="color" id="topColor2" value="#5a4fcf">
+                            <select id="topGradientDir">
+                                <option value="to right">Left to Right</option>
+                                <option value="to bottom">Top to Bottom</option>
+                                <option value="to bottom right">Diagonal</option>
+                                <option value="45deg">45° Angle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="face-control">
+                        <h4>Bottom</h4>
+                        <input type="color" id="bottomColor" value="#fd79a8">
+                        <select id="bottomGradient">
+                            <option value="none">Solid Color</option>
+                            <option value="linear">Linear Gradient</option>
+                            <option value="radial">Radial Gradient</option>
+                        </select>
+                        <div class="gradient-controls" id="bottomGradientControls">
+                            <input type="color" id="bottomColor2" value="#e84393">
+                            <select id="bottomGradientDir">
+                                <option value="to right">Left to Right</option>
+                                <option value="to bottom">Top to Bottom</option>
+                                <option value="to bottom right">Diagonal</option>
+                                <option value="45deg">45° Angle</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="reset-btn" onclick="resetCube()">🔄 Reset to Default</button>
+            
+            <div class="info">
+                <strong>Instructions:</strong><br>
+                Click and drag the cube to rotate it in 3D space. Customize colors, gradients, size, and mouse sensitivity using the controls above.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cube rotation variables
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotationX = 15;
+        let rotationY = 25;
+        let rotationZ = 0;
+        let mouseSensitivity = 1;
+
+        // Get cube element
+        const cube = document.getElementById('cube');
+
+        // Mouse event handlers for rotation
+        cube.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            cube.classList.add('dragging');
+            previousMousePosition = {
+                x: e.clientX,
+                y: e.clientY
+            };
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const deltaMove = {
+                x: e.clientX - previousMousePosition.x,
+                y: e.clientY - previousMousePosition.y
+            };
+
+            // Update rotation based on mouse movement
+            rotationX -= deltaMove.y * mouseSensitivity;
+            rotationY += deltaMove.x * mouseSensitivity;
+
+            // Apply rotation to cube
+            updateCubeRotation();
+
+            previousMousePosition = {
+                x: e.clientX,
+                y: e.clientY
+            };
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            cube.classList.remove('dragging');
+        });
+
+        // Touch events for mobile support
+        cube.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            cube.classList.add('dragging');
+            const touch = e.touches[0];
+            previousMousePosition = {
+                x: touch.clientX,
+                y: touch.clientY
+            };
+            e.preventDefault();
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+
+            const touch = e.touches[0];
+            const deltaMove = {
+                x: touch.clientX - previousMousePosition.x,
+                y: touch.clientY - previousMousePosition.y
+            };
+
+            rotationX -= deltaMove.y * mouseSensitivity;
+            rotationY += deltaMove.x * mouseSensitivity;
+
+            updateCubeRotation();
+
+            previousMousePosition = {
+                x: touch.clientX,
+                y: touch.clientY
+            };
+            e.preventDefault();
+        });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+            cube.classList.remove('dragging');
+        });
+
+        // Function to update cube rotation
+        function updateCubeRotation() {
+            cube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg) rotateZ(${rotationZ}deg)`;
+        }
+
+        // Cube size control
+        document.getElementById('cubeSize').addEventListener('input', (e) => {
+            const size = parseInt(e.target.value);
+            document.getElementById('sizeValue').textContent = size + 'px';
+            
+            // Update cube and face sizes
+            cube.style.width = size + 'px';
+            cube.style.height = size + 'px';
+            
+            const faces = cube.querySelectorAll('.face');
+            faces.forEach(face => {
+                face.style.width = size + 'px';
+                face.style.height = size + 'px';
+            });
+            
+            // Update face positions
+            const halfSize = size / 2;
+            faces[0].style.transform = `rotateY(0deg) translateZ(${halfSize}px)`;
+            faces[1].style.transform = `rotateY(180deg) translateZ(${halfSize}px)`;
+            faces[2].style.transform = `rotateY(90deg) translateZ(${halfSize}px)`;
+            faces[3].style.transform = `rotateY(-90deg) translateZ(${halfSize}px)`;
+            faces[4].style.transform = `rotateX(90deg) translateZ(${halfSize}px)`;
+            faces[5].style.transform = `rotateX(-90deg) translateZ(${halfSize}px)`;
+        });
+
+        // Mouse sensitivity control
+        document.getElementById('mouseSensitivity').addEventListener('input', (e) => {
+            mouseSensitivity = parseFloat(e.target.value);
+            document.getElementById('sensitivityValue').textContent = mouseSensitivity.toFixed(1);
+        });
+
+        // Face color and gradient controls
+        const faces = ['front', 'back', 'right', 'left', 'top', 'bottom'];
+        
+        faces.forEach(face => {
+            // Color picker
+            document.getElementById(face + 'Color').addEventListener('input', (e) => {
+                updateFaceStyle(face);
+            });
+
+            // Secondary color picker (for gradients)
+            document.getElementById(face + 'Color2').addEventListener('input', (e) => {
+                updateFaceStyle(face);
+            });
+
+            // Gradient type selector
+            document.getElementById(face + 'Gradient').addEventListener('change', (e) => {
+                const gradientControls = document.getElementById(face + 'GradientControls');
+                if (e.target.value === 'none') {
+                    gradientControls.classList.remove('active');
+                } else {
+                    gradientControls.classList.add('active');
+                }
+                updateFaceStyle(face);
+            });
+
+            // Gradient direction selector
+            document.getElementById(face + 'GradientDir').addEventListener('change', (e) => {
+                updateFaceStyle(face);
+            });
+        });
+
+        // Function to update face style
+        function updateFaceStyle(face) {
+            const faceElement = document.querySelector(`.face.${face}`);
+            const color1 = document.getElementById(face + 'Color').value;
+            const color2 = document.getElementById(face + 'Color2').value;
+            const gradientType = document.getElementById(face + 'Gradient').value;
+            const gradientDir = document.getElementById(face + 'GradientDir').value;
+
+            let backgroundStyle;
+
+            if (gradientType === 'none') {
+                backgroundStyle = color1;
+            } else if (gradientType === 'linear') {
+                backgroundStyle = `linear-gradient(${gradientDir}, ${color1}, ${color2})`;
+            } else if (gradientType === 'radial') {
+                backgroundStyle = `radial-gradient(circle, ${color1}, ${color2})`;
+            }
+
+            faceElement.style.background = backgroundStyle;
+        }
+
+        // Reset function
+        function resetCube() {
+            // Reset rotation
+            rotationX = 15;
+            rotationY = 25;
+            rotationZ = 0;
+            updateCubeRotation();
+
+            // Reset size
+            document.getElementById('cubeSize').value = 200;
+            document.getElementById('sizeValue').textContent = '200px';
+            
+            // Reset sensitivity
+            document.getElementById('mouseSensitivity').value = 1;
+            document.getElementById('sensitivityValue').textContent = '1.0';
+            mouseSensitivity = 1;
+
+            // Reset cube size
+            cube.style.width = '200px';
+            cube.style.height = '200px';
+            
+            const faceElements = cube.querySelectorAll('.face');
+            faceElements.forEach(face => {
+                face.style.width = '200px';
+                face.style.height = '200px';
+            });
+            
+            // Reset face positions
+            faceElements[0].style.transform = 'rotateY(0deg) translateZ(100px)';
+            faceElements[1].style.transform = 'rotateY(180deg) translateZ(100px)';
+            faceElements[2].style.transform = 'rotateY(90deg) translateZ(100px)';
+            faceElements[3].style.transform = 'rotateY(-90deg) translateZ(100px)';
+            faceElements[4].style.transform = 'rotateX(90deg) translateZ(100px)';
+            faceElements[5].style.transform = 'rotateX(-90deg) translateZ(100px)';
+
+            // Reset colors and gradients
+            const defaultColors = {
+                front: '#ff6b6b',
+                back: '#4ecdc4',
+                right: '#45b7d1',
+                left: '#f9ca24',
+                top: '#6c5ce7',
+                bottom: '#fd79a8'
+            };
+
+            faces.forEach(face => {
+                document.getElementById(face + 'Color').value = defaultColors[face];
+                document.getElementById(face + 'Color2').value = defaultColors[face];
+                document.getElementById(face + 'Gradient').value = 'none';
+                document.getElementById(face + 'GradientControls').classList.remove('active');
+                document.querySelector(`.face.${face}`).style.background = defaultColors[face];
+            });
+        }
+
+        // Initialize gradient controls visibility
+        faces.forEach(face => {
+            const gradientSelect = document.getElementById(face + 'Gradient');
+            const gradientControls = document.getElementById(face + 'GradientControls');
+            
+            if (gradientSelect.value === 'none') {
+                gradientControls.classList.remove('active');
+            } else {
+                gradientControls.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>
